@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel | WalletoHub</title>
+  <style>
+    body { font-family: Arial; background: black; color: white; text-align: center; }
+    .box { background: #1c1c1c; margin: 20px auto; padding: 20px; width: 90%; max-width: 500px; border-radius: 10px; }
+    input { width: 90%; padding: 8px; margin: 5px 0; }
+    button { padding: 10px; background: green; color: white; border: none; }
+  </style>
+</head>
+<body>
+  <h2>Admin Panel</h2>
+
+  <div class="box">
+    <h3>Add Balance to User</h3>
+    <form method="POST">
+      <input type="email" name="email" placeholder="User Email" required><br>
+      <input type="number" step="0.01" name="amount" placeholder="Amount" required><br>
+      <button type="submit">Add Balance</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h3>Pending Withdrawals</h3>
+    {% for w in withdrawals %}
+      <p>
+        {{ w[2] }} - ${{ w[4] }} - {{ w[3] }} | Status: {{ w[5] }}
+        <form method="POST" action="/admin/complete/{{ w[0] }}">
+          <button>Mark Complete</button>
+        </form>
+      </p>
+    {% endfor %}
+  </div>
+
+  <a href="/dashboard">← Back</a>
+</body>
+</html>
