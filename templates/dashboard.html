@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard | WalletoHub</title>
+  <style>
+    body { font-family: Arial; background: #0c0c0c; color: #fff; text-align: center; }
+    .box { background: #1a1a1a; padding: 20px; border-radius: 10px; margin: 20px auto; width: 90%; max-width: 500px; }
+    a { color: cyan; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <h2>Welcome to WalletoHub</h2>
+  <div class="box">
+    <h3>Wallet Balance</h3>
+    <p><b>${{ balance }}</b></p>
+    <a href="/withdraw">Withdraw</a> | <a href="/logout">Logout</a>
+  </div>
+
+  <div class="box">
+    <h3>Recent Withdrawals</h3>
+    {% if withdrawals %}
+      {% for w in withdrawals %}
+        <p>${{ w[4] }} - {{ w[2] }} ({{ w[5] }})</p>
+      {% endfor %}
+    {% else %}
+        <p>No withdrawals yet.</p>
+    {% endif %}
+  </div>
+</body>
+</html>
