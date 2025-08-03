@@ -1,11 +1,24 @@
-{% extends 'base.html' %}
-{% block title %}Login{% endblock %}
-{% block content %}
-<h2>Login</h2>
-<form method="POST">
-    <input class="form-control mb-2" name="email" placeholder="Email" required>
-    <input class="form-control mb-2" name="password" placeholder="Password" type="password" required>
-    <button class="btn btn-primary">Login</button>
-</form>
-<p class="mt-3">Don't have an account? <a href="/register">Register here</a></p>
-{% endblock %}
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        conn = sqlite3.connect('wallet.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
+        user = c.fetchone()
+        conn.close()
+
+        if user:
+            # এই অংশ বাদ, কারণ আর ভেরিফিকেশন লাগবে না
+            # if user[7] != 1:
+            #     session['pending_email'] = email
+            #     return redirect('/verify')
+            
+            session['user_id'] = user[0]
+            session['email'] = user[2]
+            return redirect('/dashboard')
+        else:
+            return "Invalid credentials."
+    return render_template('login.html')
