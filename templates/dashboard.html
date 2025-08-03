@@ -1,18 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Dashboard | WalletoHub</title>
-</head>
-<body>
-  <h2>Welcome, {{ name }}</h2>
-  <p>Your balance: ${{ balance }}</p>
-  <p>Your referral code (email): {{ referral_code }}</p>
-  <a href="/withdraw">Withdraw</a> |
-  {% if is_admin %}
-    <a href="/admin">Admin Panel</a> |
-  {% endif %}
-  <a href="/support">Support</a> |
-  <a href="/logout">Logout</a>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<h2>Welcome, {{ name }}</h2>
+<p><strong>Balance:</strong> {{ balance }} BDT</p>
+<p><strong>Your Referral Code:</strong> {{ refer_code }}</p>
+<p>Share this code with others. When someone signs up using this code, you get 1.0 BDT!</p>
+<a class="btn btn-outline-success" href="/withdraw">Withdraw</a>
+<a class="btn btn-outline-secondary" href="/logout">Logout</a>
+{% endblock %}
