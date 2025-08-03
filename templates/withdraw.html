@@ -1,30 +1,27 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<h2>Withdraw Funds</h2>
-{% if success %}
-    <div class="alert alert-success">
-        Withdrawal request for ৳{{ amount }} to {{ method }} ({{ number }}) submitted!
-    </div>
-{% endif %}
-<form method="POST">
-    <div class="mb-3">
-        <label>Method</label>
-        <select name="method" class="form-control" required>
-            <option value="Bkash">Bkash</option>
-            <option value="Nagad">Nagad</option>
-            <option value="Rocket">Rocket</option>
-            <option value="Paypal">PayPal</option>
-            <option value="Payoneer">Payoneer</option>
-        </select>
-    </div>
-    <div class="mb-3">
-        <label>Number/Account</label>
-        <input type="text" name="number" required class="form-control">
-    </div>
-    <div class="mb-3">
-        <label>Amount</label>
-        <input type="number" step="0.01" name="amount" required class="form-control">
-    </div>
-    <button type="submit" class="btn btn-warning">Withdraw</button>
-</form>
+<div class="container mt-5">
+    <h2 class="text-center">Withdraw</h2>
+    <form method="POST" action="/withdraw">
+        <div class="mb-3">
+            <label>Select Gateway</label>
+            <select name="gateway" class="form-control" required>
+                <option value="Bkash">Bkash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Rocket">Rocket</option>
+                <option value="PayPal">PayPal</option>
+                <option value="Payoneer">Payoneer</option>
+            </select>
+        </div>
+        <div class="mb-3">
+            <label>Account Number</label>
+            <input type="text" name="account_number" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Amount</label>
+            <input type="number" name="amount" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Request Withdraw</button>
+    </form>
+</div>
 {% endblock %}
