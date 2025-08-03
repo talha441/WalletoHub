@@ -1,18 +1,21 @@
-{% extends 'base.html' %}
-{% block title %}Admin Panel{% endblock %}
-{% block content %}
-<h2>Admin Dashboard</h2>
-<h3>Withdraw Requests</h3>
-<ul>
-  {% for w in withdraws %}
-    <li>
-      {{ w.username }} - {{ w.amount }} BDT - {{ w.method }} - {{ w.number }}
-      {% if not w.completed %}
-        <a href="/approve/{{ w.id }}">Approve</a>
-      {% else %}
-        ✅ Completed
-      {% endif %}
-    </li>
-  {% endfor %}
-</ul>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel - WalletoHub</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="form-container">
+    <h2>Admin Panel</h2>
+    {% if message %}
+      <p class="success">{{ message }}</p>
+    {% endif %}
+    <form method="POST">
+      <input type="email" name="email" placeholder="User Email" required>
+      <input type="number" step="0.01" name="amount" placeholder="Add Amount ($)" required>
+      <button type="submit">Add Balance</button>
+    </form>
+    <a href="/dashboard">← Back to Dashboard</a>
+  </div>
+</body>
+</html>
