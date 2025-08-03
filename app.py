@@ -1,136 +1,114 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 
 app = Flask(__name__)
-app.secret_key = 'walletohubsecretkey'
+app.secret_key = 'secretkey123'
 
-# Database Initialization
+# Database setup
 def init_db():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect('wallet.db')
     c = conn.cursor()
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            email TEXT UNIQUE,
-            password TEXT,
-            balance REAL DEFAULT 0
-        )
-    ''')
-    c.execute('''
-        CREATE TABLE IF NOT EXISTS withdrawals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            method TEXT,
-            number TEXT,
-            amount REAL,
-            status TEXT DEFAULT 'pending'
-        )
-    ''')
+    c.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        email TEXT UNIQUE,
+        password TEXT,
+        balance REAL DEFAULT 0.0
+    )''')
     conn.commit()
     conn.close()
 
-# Home
+init_db()
+
 @app.route('/')
 def home():
-    if 'user_id' in session:
-        return redirect('/dashboard')
     return redirect('/login')
 
-# Register
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        name = request.form['name']
         email = request.form['email']
         password = request.form['password']
-        conn = sqlite3.connect('database.db')
+
+        conn = sqlite3.connect('wallet.db')
         c = conn.cursor()
         try:
-            c.execute("INSERT INTO users (email, password) VALUES (?, ?)", (email, password))
+            c.execute("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", (name, email, password))
             conn.commit()
-            return redirect('/login')
-        except:
-            return "User already exists."
+        except sqlite3.IntegrityError:
+            return "Email already registered."
+        conn.close()
+        return redirect('/login')
     return render_template('register.html')
 
-# Login
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        conn = sqlite3.connect('database.db')
+
+        conn = sqlite3.connect('wallet.db')
         c = conn.cursor()
-        c.execute("SELECT id FROM users WHERE email=? AND password=?", (email, password))
+        c.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
         user = c.fetchone()
+        conn.close()
+
         if user:
             session['user_id'] = user[0]
+            session['email'] = user[2]
             return redirect('/dashboard')
         else:
-            return "Invalid credentials"
+            return "Invalid credentials."
     return render_template('login.html')
 
-# Dashboard
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
         return redirect('/login')
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("SELECT balance FROM users WHERE id=?", (session['user_id'],))
-    balance = c.fetchone()[0]
-    c.execute("SELECT * FROM withdrawals WHERE user_id=?", (session['user_id'],))
-    withdrawals = c.fetchall()
-    return render_template('dashboard.html', balance=balance, withdrawals=withdrawals)
 
-# Withdraw
+    conn = sqlite3.connect('wallet.db')
+    c = conn.cursor()
+    c.execute("SELECT name, balance FROM users WHERE id = ?", (session['user_id'],))
+    user = c.fetchone()
+    conn.close()
+    return render_template('dashboard.html', name=user[0], balance=user[1])
+
 @app.route('/withdraw', methods=['GET', 'POST'])
 def withdraw():
     if 'user_id' not in session:
         return redirect('/login')
+
     if request.method == 'POST':
         method = request.form['method']
         number = request.form['number']
         amount = float(request.form['amount'])
-        conn = sqlite3.connect('database.db')
-        c = conn.cursor()
-        c.execute("INSERT INTO withdrawals (user_id, method, number, amount) VALUES (?, ?, ?, ?)",
-                  (session['user_id'], method, number, amount))
-        conn.commit()
-        conn.close()
-        return "✅ Withdrawal request submitted!"
-    return render_template('withdraw.html')
 
-# Admin Panel
+        return render_template('withdraw.html', success=True, method=method, number=number, amount=amount)
+    return render_template('withdraw.html', success=False)
+
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    if 'user_id' not in session or session['email'] != 'admin@gmail.com':
+        return redirect('/login')
+
     if request.method == 'POST':
         email = request.form['email']
         amount = float(request.form['amount'])
-        conn = sqlite3.connect('database.db')
+
+        conn = sqlite3.connect('wallet.db')
         c = conn.cursor()
         c.execute("UPDATE users SET balance = balance + ? WHERE email = ?", (amount, email))
         conn.commit()
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("SELECT * FROM withdrawals WHERE status='pending'")
-    withdrawals = c.fetchall()
-    return render_template('admin.html', withdrawals=withdrawals)
+        conn.close()
+        return render_template('admin.html', message=f"{email} updated successfully!")
 
-# Mark Withdraw Complete
-@app.route('/admin/complete/<int:withdraw_id>', methods=['POST'])
-def complete_withdraw(withdraw_id):
-    conn = sqlite3.connect('database.db')
-    c = conn.cursor()
-    c.execute("UPDATE withdrawals SET status='completed' WHERE id=?", (withdraw_id,))
-    conn.commit()
-    return redirect('/admin')
+    return render_template('admin.html', message="")
 
-# Logout
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/login')
 
-# Run the App
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
