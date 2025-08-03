@@ -1,37 +1,34 @@
-```python
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for, session
 import os
+import json
 import uuid
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///wallet.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = 'your_secret_key_here'
 
-db = SQLAlchemy(app)
+# Load users data
+def load_users():
+    if os.path.exists('users.json'):
+        with open('users.json', 'r') as f:
+            return json.load(f)
+    return {}
 
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150))
-    email = db.Column(db.String(150), unique=True)
-    password = db.Column(db.String(150))
-    balance = db.Column(db.Float, default=0.0)
-    referral_code = db.Column(db.String(10), unique=True)
-    referred_by = db.Column(db.String(10))
+# Save users data
+def save_users(users):
+    with open('users.json', 'w') as f:
+        json.dump(users, f, indent=4)
 
-class Withdrawal(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    gateway = db.Column(db.String(50))
-    account = db.Column(db.String(100))
-    amount = db.Column(db.Float)
-    status = db.Column(db.String(50), default='Pending')
+# Load withdrawals
+def load_withdrawals():
+    if os.path.exists('withdrawals.json'):
+        with open('withdrawals.json', 'r') as f:
+            return json.load(f)
+    return []
 
-@app.before_first_request
-def create_tables():
-    db.create_all()
+# Save withdrawals
+def save_withdrawals(withdrawals):
+    with open('withdrawals.json', 'w') as f:
+        json.dump(withdrawals, f, indent=4)
 
 @app.route('/')
 def home():
@@ -40,26 +37,28 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
         email = request.form['email']
-        password = generate_password_hash(request.form['password'])
-        referral_code = str(uuid.uuid4())[:8]
-        referred_by = request.form.get('referral_code')
+        password = request.form['password']
+        referral = request.form.get('referral', '')
+        users = load_users()
 
-        new_user = User(username=username, email=email, password=password,
-                        referral_code=referral_code, referred_by=referred_by)
-        db.session.add(new_user)
-        db.session.commit()
+        if email in users:
+            return "User already exists"
 
-        # Referral bonus
-        if referred_by:
-            ref_user = User.query.filter_by(referral_code=referred_by).first()
-            if ref_user:
-                ref_user.balance += 1.0
-                db.session.commit()
+        users[email] = {
+            'password': password,
+            'balance': 0.0,
+            'referral': referral,
+            'referred_users': [],
+        }
 
-        flash('Registration successful! Please login.', 'success')
+        if referral and referral in users:
+            users[referral]['balance'] += 1.0
+            users[referral]['referred_users'].append(email)
+
+        save_users(users)
         return redirect(url_for('login'))
+
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -67,54 +66,85 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id
+        users = load_users()
+
+        if email in users and users[email]['password'] == password:
+            session['email'] = email
             return redirect(url_for('dashboard'))
         else:
-            flash('Invalid credentials', 'danger')
+            return "Invalid credentials"
+
     return render_template('login.html')
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
+    if 'email' not in session:
         return redirect(url_for('login'))
-    user = User.query.get(session['user_id'])
-    referred_count = User.query.filter_by(referred_by=user.referral_code).count()
-    return render_template('dashboard.html', user=user, referred_count=referred_count)
+
+    email = session['email']
+    users = load_users()
+    user = users.get(email, {})
+    referral_link = f"https://{request.host}/register?referral={email}"
+    referral_count = len(user.get('referred_users', []))
+
+    return render_template('dashboard.html', email=email, balance=user.get('balance', 0.0),
+                           referral_link=referral_link, referral_count=referral_count)
 
 @app.route('/withdraw', methods=['GET', 'POST'])
 def withdraw():
-    if 'user_id' not in session:
+    if 'email' not in session:
         return redirect(url_for('login'))
+
     if request.method == 'POST':
         gateway = request.form['gateway']
-        account = request.form['account']
+        account_number = request.form['account_number']
         amount = float(request.form['amount'])
-        user = User.query.get(session['user_id'])
-        if user.balance >= amount:
-            withdrawal = Withdrawal(user_id=user.id, gateway=gateway, account=account, amount=amount)
-            user.balance -= amount
-            db.session.add(withdrawal)
-            db.session.commit()
-            flash('Withdrawal request submitted!', 'success')
-        else:
-            flash('Insufficient balance.', 'danger')
+        email = session['email']
+        users = load_users()
+
+        if users[email]['balance'] < amount:
+            return "Insufficient balance"
+
+        users[email]['balance'] -= amount
+        save_users(users)
+
+        withdrawals = load_withdrawals()
+        withdrawals.append({
+            'id': str(uuid.uuid4()),
+            'email': email,
+            'gateway': gateway,
+            'account_number': account_number,
+            'amount': amount,
+            'status': 'Pending'
+        })
+        save_withdrawals(withdrawals)
+
+        return "Withdrawal request submitted"
+
     return render_template('withdraw.html')
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
+    users = load_users()
+    withdrawals = load_withdrawals()
+
     if request.method == 'POST':
-        email = request.form['email']
+        action = request.form['action']
+        target_email = request.form['email']
         amount = float(request.form['amount'])
-        user = User.query.filter_by(email=email).first()
-        if user:
-            user.balance += amount
-            db.session.commit()
-            flash('Balance credited successfully!', 'success')
-        else:
-            flash('User not found.', 'danger')
-    return render_template('admin.html')
+
+        if action == 'credit' and target_email in users:
+            users[target_email]['balance'] += amount
+            save_users(users)
+
+        elif action == 'complete_withdrawal':
+            for w in withdrawals:
+                if w['id'] == request.form['withdrawal_id']:
+                    w['status'] = 'Completed'
+                    break
+            save_withdrawals(withdrawals)
+
+    return render_template('admin.html', users=users, withdrawals=withdrawals)
 
 @app.route('/logout')
 def logout():
@@ -123,4 +153,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
-```
