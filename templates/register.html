@@ -1,19 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Register - WalletoHub</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <title>Register | WalletoHub</title>
 </head>
 <body>
-  <div class="form-container">
-    <h2>Create Account</h2>
-    <form method="POST">
-      <input type="text" name="name" placeholder="Full Name" required>
-      <input type="email" name="email" placeholder="Email Address" required>
-      <input type="password" name="password" placeholder="Password" required>
-      <button type="submit">Register</button>
-    </form>
-    <p>Already have an account? <a href="/login">Login here</a></p>
-  </div>
+  <h2>Create an Account</h2>
+  <form method="POST">
+    <input type="text" name="name" placeholder="Full Name" required><br>
+    <input type="email" name="email" placeholder="Email" required><br>
+    <input type="password" name="password" placeholder="Password" required><br>
+    <input type="text" name="referred_by" placeholder="Referral Email (optional)"><br>
+    <button type="submit">Register</button>
+  </form>
+  <p>Already have an account? <a href="/login">Login</a></p>
 </body>
 </html>
