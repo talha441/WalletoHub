@@ -1,14 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Email Verification</title>
-</head>
-<body>
-  <h2>Email Verification</h2>
-  <form method="POST">
-    <input type="text" name="code" placeholder="Enter Verification Code" required>
-    <button type="submit">Verify</button>
-  </form>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block title %}Verify Email{% endblock %}
+{% block content %}
+<h2>Email Verification</h2>
+<p>A verification code has been sent to your email. Please enter it below.</p>
+<form method="POST">
+    <input class="form-control mb-2" name="code" placeholder="Verification Code" required>
+    <button class="btn btn-warning">Verify</button>
+</form>
+{% endblock %}
