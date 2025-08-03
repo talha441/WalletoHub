@@ -1,10 +1,7 @@
-{% extends 'base.html' %}
-{% block title %}Dashboard{% endblock %}
+{% extends "base.html" %}
 {% block content %}
 <h2>Welcome, {{ name }}</h2>
-<p><strong>Balance:</strong> {{ balance }} BDT</p>
+<p><strong>Balance:</strong> ${{ balance }}</p>
 <p><strong>Your Referral Code:</strong> {{ refer_code }}</p>
-<p>Share this code with others. When someone signs up using this code, you get 1.0 BDT!</p>
-<a class="btn btn-outline-success" href="/withdraw">Withdraw</a>
-<a class="btn btn-outline-secondary" href="/logout">Logout</a>
+<p>Share your code to earn ৳1 per successful user!</p>
 {% endblock %}
