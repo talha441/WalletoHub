@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Dashboard - WalletoHub</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <meta charset="UTF-8">
+  <title>Dashboard | WalletoHub</title>
 </head>
 <body>
-  <div class="dashboard">
-    <h2>Welcome, {{ name }}!</h2>
-    <p>Your Balance: <strong>${{ balance }}</strong></p>
-    <a href="/withdraw">Withdraw</a> |
-    <a href="/logout">Logout</a>
-    {% if session['email'] == 'admin@gmail.com' %}
-      | <a href="/admin">Admin Panel</a>
-    {% endif %}
-  </div>
+  <h2>Welcome, {{ name }}</h2>
+  <p>Your balance: ${{ balance }}</p>
+  <p>Your referral code (email): {{ referral_code }}</p>
+  <a href="/withdraw">Withdraw</a> |
+  {% if is_admin %}
+    <a href="/admin">Admin Panel</a> |
+  {% endif %}
+  <a href="/support">Support</a> |
+  <a href="/logout">Logout</a>
 </body>
 </html>
