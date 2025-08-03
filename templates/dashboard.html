@@ -1,8 +1,18 @@
-{% extends 'base.html' %}
-{% block title %}Dashboard{% endblock %}
-{% block content %}
-<h2>Welcome, {{ username }}</h2>
-<p>Balance: {{ balance }} BDT</p>
-<a href="/withdraw">Withdraw</a> |
-<a href="/logout">Logout</a>
-{% endblock %}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard - WalletoHub</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="dashboard">
+    <h2>Welcome, {{ name }}!</h2>
+    <p>Your Balance: <strong>${{ balance }}</strong></p>
+    <a href="/withdraw">Withdraw</a> |
+    <a href="/logout">Logout</a>
+    {% if session['email'] == 'admin@gmail.com' %}
+      | <a href="/admin">Admin Panel</a>
+    {% endif %}
+  </div>
+</body>
+</html>
