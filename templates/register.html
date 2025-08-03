@@ -1,17 +1,23 @@
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email']
-        password = request.form['password']
-        referred_by = request.form.get('referred_by')
-        refer_code = email.split('@')[0] + str(random.randint(100, 999))
-
-        conn = sqlite3.connect('wallet.db')
-        c = conn.cursor()
-        try:
-            c.execute("INSERT INTO users (name, email, password, refer_code, referred_by, verified) VALUES (?, ?, ?, ?, ?, ?)",
-                      (name, email, password, refer_code, referred_by, 1))  # সরাসরি verified = 1
-
-            # রেফার থাকলে বোনাস
+{% extends "base.html" %}
+{% block content %}
+<h2>Register</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label>Name</label>
+        <input type="text" name="name" required class="form-control">
+    </div>
+    <div class="mb-3">
+        <label>Email</label>
+        <input type="email" name="email" required class="form-control">
+    </div>
+    <div class="mb-3">
+        <label>Password</label>
+        <input type="password" name="password" required class="form-control">
+    </div>
+    <div class="mb-3">
+        <label>Referral Code (Optional)</label>
+        <input type="text" name="referred_by" class="form-control">
+    </div>
+    <button type="submit" class="btn btn-primary">Register</button>
+</form>
+{% endblock %}
