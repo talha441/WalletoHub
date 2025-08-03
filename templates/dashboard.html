@@ -1,7 +1,52 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<h2>Welcome, {{ name }}</h2>
-<p><strong>Balance:</strong> ${{ balance }}</p>
-<p><strong>Your Referral Code:</strong> {{ refer_code }}</p>
-<p>Share your code to earn ৳1 per successful user!</p>
+<div class="container mt-5 text-center">
+    <h2>Welcome, {{ email }}</h2>
+
+    <!-- Profile Initial -->
+    <div class="my-3">
+        <span class="badge bg-primary rounded-circle fs-4" style="width:60px; height:60px;">
+            {{ email[0]|upper }}
+        </span>
+    </div>
+
+    <!-- Balance -->
+    <div class="mt-4">
+        <h4>Balance: 
+            <span id="balance" style="display: none;">${{ balance }}</span>
+            <button class="btn btn-outline-secondary btn-sm" onclick="toggleBalance()">Show</button>
+        </h4>
+    </div>
+
+    <!-- Referral Link -->
+    <div class="mt-4">
+        <h5>Your Referral Link:</h5>
+        <div class="input-group mb-3">
+            <input type="text" class="form-control" value="{{ referral_link }}" id="refLink" readonly>
+            <button class="btn btn-outline-primary" onclick="copyReferral()">Copy</button>
+        </div>
+        <p>You referred <strong>{{ referred_users }}</strong> users.</p>
+    </div>
+
+    <a href="/withdraw" class="btn btn-warning mt-3">Withdraw Now</a>
+</div>
+
+<script>
+function toggleBalance() {
+    var bal = document.getElementById("balance");
+    if (bal.style.display === "none") {
+        bal.style.display = "inline";
+    } else {
+        bal.style.display = "none";
+    }
+}
+
+function copyReferral() {
+    var copyText = document.getElementById("refLink");
+    copyText.select();
+    copyText.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(copyText.value);
+    alert("Referral link copied!");
+}
+</script>
 {% endblock %}
