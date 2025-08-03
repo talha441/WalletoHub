@@ -1,24 +1,15 @@
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-
-        conn = sqlite3.connect('wallet.db')
-        c = conn.cursor()
-        c.execute("SELECT * FROM users WHERE email = ? AND password = ?", (email, password))
-        user = c.fetchone()
-        conn.close()
-
-        if user:
-            # এই অংশ বাদ, কারণ আর ভেরিফিকেশন লাগবে না
-            # if user[7] != 1:
-            #     session['pending_email'] = email
-            #     return redirect('/verify')
-            
-            session['user_id'] = user[0]
-            session['email'] = user[2]
-            return redirect('/dashboard')
-        else:
-            return "Invalid credentials."
-    return render_template('login.html')
+{% extends "base.html" %}
+{% block content %}
+<h2>Login</h2>
+<form method="POST">
+    <div class="mb-3">
+        <label>Email</label>
+        <input type="email" name="email" required class="form-control">
+    </div>
+    <div class="mb-3">
+        <label>Password</label>
+        <input type="password" name="password" required class="form-control">
+    </div>
+    <button type="submit" class="btn btn-success">Login</button>
+</form>
+{% endblock %}
