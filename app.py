@@ -1,54 +1,35 @@
-from flask import Flask, render_template, request, redirect, session
-import sqlite3
+from flask import Flask, render_template, request, redirect, session, url_for
 import os
-from uuid import uuid4
+from datetime import datetime
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key_here'
+app.secret_key = 'your_secret_key'
 
-if not os.path.exists('wallet.db'):
-    conn = sqlite3.connect('wallet.db')
-    c = conn.cursor()
-    c.execute('''CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, email TEXT UNIQUE, password TEXT, balance REAL DEFAULT 0, refer_code TEXT, referred_by TEXT)''')
-    c.execute('''CREATE TABLE withdrawals (id INTEGER PRIMARY KEY, user_id INTEGER, method TEXT, number TEXT, amount REAL, status TEXT DEFAULT 'pending')''')
-    conn.commit()
-    conn.close()
+users = {}
+withdraw_requests = []
 
-def get_db_connection():
-    conn = sqlite3.connect('wallet.db')
-    conn.row_factory = sqlite3.Row
-    return conn
+UPLOAD_FOLDER = 'static/uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 @app.route('/')
-def index():
+def home():
     return redirect('/login')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        name = request.form['name']
         email = request.form['email']
         password = request.form['password']
-        referred_by = request.form.get('referred_by') or None
+        refer = request.form.get('refer')
 
-        refer_code = str(uuid4())[:8]
+        if email in users:
+            return "User already exists"
 
-        conn = get_db_connection()
-        c = conn.cursor()
-        try:
-            c.execute('INSERT INTO users (name, email, password, refer_code, referred_by) VALUES (?, ?, ?, ?, ?)', (name, email, password, refer_code, referred_by))
-            conn.commit()
-
-            if referred_by:
-                c.execute('UPDATE users SET balance = balance + 1 WHERE refer_code = ?', (referred_by,))
-                conn.commit()
-        except sqlite3.IntegrityError:
-            conn.close()
-            return 'Email already registered.'
-
-        conn.close()
+        balance = 1.0 if refer in users else 0.0
+        users[email] = {'password': password, 'balance': balance, 'refer': refer}
         return redirect('/login')
-
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -56,85 +37,61 @@ def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+        user = users.get(email)
 
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('SELECT * FROM users WHERE email = ? AND password = ?', (email, password))
-        user = c.fetchone()
-        conn.close()
-
-        if user:
-            session['user_id'] = user['id']
-            session['email'] = user['email']
+        if user and user['password'] == password:
+            session['user'] = email
             return redirect('/dashboard')
         else:
-            return 'Invalid credentials.'
-
+            return "Invalid credentials"
     return render_template('login.html')
 
 @app.route('/dashboard')
 def dashboard():
-    if 'user_id' not in session:
+    if 'user' not in session:
         return redirect('/login')
-
-    conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('SELECT name, balance, refer_code FROM users WHERE id = ?', (session['user_id'],))
-    user = c.fetchone()
-    conn.close()
-
-    return render_template('dashboard.html', name=user['name'], balance=user['balance'], refer_code=user['refer_code'])
+    user = users[session['user']]
+    return render_template('dashboard.html', user_email=session['user'], balance=user['balance'])
 
 @app.route('/withdraw', methods=['GET', 'POST'])
 def withdraw():
-    if 'user_id' not in session:
+    if 'user' not in session:
         return redirect('/login')
-
-    success = False
     if request.method == 'POST':
         method = request.form['method']
         number = request.form['number']
         amount = float(request.form['amount'])
+        proof = request.files['proof']
+        filename = secure_filename(proof.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        proof.save(filepath)
 
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('SELECT balance FROM users WHERE id = ?', (session['user_id'],))
-        balance = c.fetchone()['balance']
-
-        if balance >= amount:
-            c.execute('INSERT INTO withdrawals (user_id, method, number, amount) VALUES (?, ?, ?, ?)', (session['user_id'], method, number, amount))
-            c.execute('UPDATE users SET balance = balance - ? WHERE id = ?', (amount, session['user_id']))
-            conn.commit()
-            success = True
-        conn.close()
-
-        return render_template('withdraw.html', success=success, amount=amount, method=method, number=number)
-
-    return render_template('withdraw.html', success=False)
+        withdraw_requests.append({
+            'email': session['user'],
+            'method': method,
+            'number': number,
+            'amount': amount,
+            'proof': filepath,
+            'status': 'Pending',
+            'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        return redirect('/dashboard')
+    return render_template('withdraw.html')
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    if session.get('email') != 'admin@gmail.com':
-        return redirect('/login')
-
-    message = None
     if request.method == 'POST':
         email = request.form['email']
         amount = float(request.form['amount'])
-
-        conn = get_db_connection()
-        c = conn.cursor()
-        c.execute('UPDATE users SET balance = balance + ? WHERE email = ?', (amount, email))
-        conn.commit()
-        conn.close()
-        message = f'Balance added to {email}'
-
-    return render_template('admin.html', message=message)
+        if email in users:
+            users[email]['balance'] += amount
+    return render_template('admin.html', users=users, withdrawals=withdraw_requests)
 
 @app.route('/logout')
 def logout():
-    session.clear()
+    session.pop('user', None)
     return redirect('/login')
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=True)
