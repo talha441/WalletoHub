@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, redirect, session, url_for
 import sqlite3
 import smtplib
 import random
+from email.mime.text import MIMEText
 
 app = Flask(__name__)
 app.secret_key = 'secretkey123'
 
-# Database setup
+# ---------------- DB INIT ------------------
 def init_db():
     conn = sqlite3.connect('wallet.db')
     c = conn.cursor()
@@ -16,33 +17,32 @@ def init_db():
         email TEXT UNIQUE,
         password TEXT,
         balance REAL DEFAULT 0.0,
-        is_verified INTEGER DEFAULT 0,
         refer_code TEXT,
-        referred_by TEXT
-    )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS verifications (
-        email TEXT,
-        code TEXT
+        referred_by TEXT,
+        verified INTEGER DEFAULT 0,
+        verification_code TEXT
     )''')
     conn.commit()
     conn.close()
 
 init_db()
 
+# ----------------- EMAIL SEND FUNCTION ------------------
 def send_verification_email(to_email, code):
-    # Use your SMTP settings
-    try:
-        server = smtplib.SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login('your-email@gmail.com', 'your-app-password')
-        subject = "Verify your account"
-        body = f"Your verification code is: {code}"
-        message = f"Subject: {subject}\n\n{body}"
-        server.sendmail('your-email@gmail.com', to_email, message)
-        server.quit()
-    except:
-        print("Email sending failed")
+    msg = MIMEText(f"Your verification code is: {code}")
+    msg['Subject'] = 'Verify Your Email - Team CSB'
+    msg['From'] = 'noreply@teamcsb.com'
+    msg['To'] = to_email
 
+    try:
+        with smtplib.SMTP('smtp.gmail.com', 587) as smtp:
+            smtp.starttls()
+            smtp.login('your_email@gmail.com', 'your_app_password')
+            smtp.send_message(msg)
+    except Exception as e:
+        print("Email failed:", e)
+
+# ---------------- ROUTES ------------------
 @app.route('/')
 def home():
     return redirect('/login')
@@ -54,48 +54,51 @@ def register():
         email = request.form['email']
         password = request.form['password']
         referred_by = request.form.get('referred_by')
+        refer_code = email.split('@')[0] + str(random.randint(100, 999))
+        verification_code = str(random.randint(100000, 999999))
 
         conn = sqlite3.connect('wallet.db')
         c = conn.cursor()
         try:
-            refer_code = f"CSB{random.randint(1000,9999)}"
-            c.execute("INSERT INTO users (name, email, password, refer_code, referred_by) VALUES (?, ?, ?, ?, ?)",
-                      (name, email, password, refer_code, referred_by))
-            code = str(random.randint(100000, 999999))
-            c.execute("INSERT INTO verifications (email, code) VALUES (?, ?)", (email, code))
-            send_verification_email(email, code)
+            c.execute("INSERT INTO users (name, email, password, refer_code, referred_by, verification_code) VALUES (?, ?, ?, ?, ?, ?)",
+                      (name, email, password, refer_code, referred_by, verification_code))
             conn.commit()
+            send_verification_email(email, verification_code)
         except sqlite3.IntegrityError:
             return "Email already registered."
         conn.close()
-        return redirect(url_for('verify_email', email=email))
+        session['pending_email'] = email
+        return redirect('/verify')
     return render_template('register.html')
 
 @app.route('/verify', methods=['GET', 'POST'])
-def verify_email():
-    email = request.args.get('email')
+def verify():
+    if 'pending_email' not in session:
+        return redirect('/login')
+
     if request.method == 'POST':
         code = request.form['code']
+        email = session['pending_email']
         conn = sqlite3.connect('wallet.db')
         c = conn.cursor()
-        c.execute("SELECT * FROM verifications WHERE email = ? AND code = ?", (email, code))
-        row = c.fetchone()
-        if row:
-            c.execute("UPDATE users SET is_verified = 1 WHERE email = ?", (email,))
-            c.execute("DELETE FROM verifications WHERE email = ?", (email,))
+        c.execute("SELECT verification_code FROM users WHERE email = ?", (email,))
+        result = c.fetchone()
+        if result and result[0] == code:
+            c.execute("UPDATE users SET verified = 1 WHERE email = ?", (email,))
 
-            # Add referral bonus
+            # Give referral bonus
             c.execute("SELECT referred_by FROM users WHERE email = ?", (email,))
-            ref = c.fetchone()
-            if ref and ref[0]:
-                c.execute("UPDATE users SET balance = balance + 10 WHERE refer_code = ?", (ref[0],))
+            ref = c.fetchone()[0]
+            if ref:
+                c.execute("UPDATE users SET balance = balance + 1.0 WHERE refer_code = ?", (ref,))
 
             conn.commit()
-            conn.close()
+            session.pop('pending_email', None)
             return redirect('/login')
         conn.close()
         return "Invalid verification code."
-    return render_template('verify.html', email=email)
+
+    return render_template('verify.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -110,8 +113,9 @@ def login():
         conn.close()
 
         if user:
-            if user[5] == 0:
-                return redirect(url_for('verify_email', email=email))
+            if user[7] != 1:
+                session['pending_email'] = email
+                return redirect('/verify')
             session['user_id'] = user[0]
             session['email'] = user[2]
             return redirect('/dashboard')
@@ -140,6 +144,7 @@ def withdraw():
         method = request.form['method']
         number = request.form['number']
         amount = float(request.form['amount'])
+
         return render_template('withdraw.html', success=True, method=method, number=number, amount=amount)
     return render_template('withdraw.html', success=False)
 
@@ -165,10 +170,6 @@ def admin():
 def logout():
     session.clear()
     return redirect('/login')
-
-@app.route('/support')
-def support():
-    return render_template('support.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
