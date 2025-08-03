@@ -1,44 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>{% block title %}WalletoHub{% endblock %}</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-      background: #f9f9f9;
-    }
-    footer {
-      margin-top: 50px;
-      padding: 15px;
-      background-color: #e9e9e9;
-      border-top: 1px solid #ccc;
-      text-align: center;
-    }
-    footer a {
-      margin: 0 10px;
-      text-decoration: none;
-      color: #333;
-    }
-    footer img {
-      height: 40px;
-      margin-bottom: 10px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>{% block title %}Team CSB Wallet{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body>
-
-  {% block content %}{% endblock %}
-
-  <footer>
-    <img src="https://drive.google.com/uc?export=view&id=1Aa8J0CzY39_vi60PjhpNPVk5EGU6BeFY" alt="Team CSB Logo"><br>
-    <a href="https://www.facebook.com/teamcsbbd?mibextid=kFxxJD" target="_blank">Facebook ID</a> |
-    <a href="https://www.facebook.com/share/1HftM2q1zd/" target="_blank">Facebook Page</a> |
-    <a href="https://www.facebook.com/share/g/16ZGAdSFHv/" target="_blank">Facebook Group</a> |
-    <a href="https://t.me/TeamCSB404" target="_blank">Telegram</a>
-    <p>Developed by <strong>Abu Talha</strong> | Team CSB</p>
-  </footer>
-
+<nav class="navbar navbar-dark bg-dark p-3">
+    <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">Team CSB Wallet</span>
+        <div>
+            <a href="https://facebook.com/teamcsbbd" class="btn btn-primary btn-sm" target="_blank">Facebook</a>
+            <a href="https://t.me/TeamCSB404" class="btn btn-info btn-sm" target="_blank">Telegram</a>
+        </div>
+    </div>
+</nav>
+<div class="container mt-4">
+    {% block content %}{% endblock %}
+</div>
+<footer class="text-center mt-5 mb-2">
+    <hr>
+    <p>Contact Support: <a href="https://facebook.com/teamcsbbd" target="_blank">Message Us</a></p>
+    <p>
+        <a href="https://facebook.com/share/1HftM2q1zd/" target="_blank">Facebook Page</a> |
+        <a href="https://facebook.com/share/g/16ZGAdSFHv/" target="_blank">Group</a> |
+        <a href="https://t.me/TeamCSB404" target="_blank">Telegram Channel</a>
+    </p>
+    <p>Developed by <strong>Abu Talha</strong> | Team: <strong>Team CSB</strong></p>
+</footer>
 </body>
 </html>
