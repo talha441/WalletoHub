@@ -1,12 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>{% block title %}WalletoHub{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f9f9f9;
+    }
+    footer {
+      margin-top: 50px;
+      padding: 15px;
+      background-color: #e9e9e9;
+      border-top: 1px solid #ccc;
+      text-align: center;
+    }
+    footer a {
+      margin: 0 10px;
+      text-decoration: none;
+      color: #333;
+    }
+    footer img {
+      height: 40px;
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    {% block content %}{% endblock %}
-  </div>
+
+  {% block content %}{% endblock %}
+
+  <footer>
+    <img src="https://drive.google.com/uc?export=view&id=1Aa8J0CzY39_vi60PjhpNPVk5EGU6BeFY" alt="Team CSB Logo"><br>
+    <a href="https://www.facebook.com/teamcsbbd?mibextid=kFxxJD" target="_blank">Facebook ID</a> |
+    <a href="https://www.facebook.com/share/1HftM2q1zd/" target="_blank">Facebook Page</a> |
+    <a href="https://www.facebook.com/share/g/16ZGAdSFHv/" target="_blank">Facebook Group</a> |
+    <a href="https://t.me/TeamCSB404" target="_blank">Telegram</a>
+    <p>Developed by <strong>Abu Talha</strong> | Team CSB</p>
+  </footer>
+
 </body>
 </html>
