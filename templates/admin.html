@@ -1,18 +1,38 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 {% block content %}
-<h2>Admin Panel</h2>
-{% if message %}
-    <div class="alert alert-success">{{ message }}</div>
-{% endif %}
-<form method="POST">
-    <div class="mb-3">
-        <label>User Email</label>
-        <input type="email" name="email" required class="form-control">
+<div class="container mt-5">
+    <h2 class="text-center">Admin Panel</h2>
+
+    <!-- Credit Balance Section -->
+    <form method="POST" action="/admin/credit">
+        <div class="mb-3">
+            <label>User Email</label>
+            <input type="email" name="email" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label>Amount to Credit</label>
+            <input type="number" name="amount" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-success">Credit Balance</button>
+    </form>
+
+    <hr class="my-5">
+
+    <!-- Withdraw Requests -->
+    <h4>Withdraw Requests:</h4>
+    {% for withdraw in withdraws %}
+    <div class="card mb-3">
+        <div class="card-body">
+            <p><strong>User:</strong> {{ withdraw.email }}</p>
+            <p><strong>Gateway:</strong> {{ withdraw.gateway }}</p>
+            <p><strong>Account:</strong> {{ withdraw.account_number }}</p>
+            <p><strong>Amount:</strong> ${{ withdraw.amount }}</p>
+            <form method="POST" action="/admin/complete_withdraw">
+                <input type="hidden" name="id" value="{{ withdraw.id }}">
+                <button type="submit" class="btn btn-primary">Mark as Complete</button>
+            </form>
+        </div>
     </div>
-    <div class="mb-3">
-        <label>Amount to Add</label>
-        <input type="number" step="0.01" name="amount" required class="form-control">
-    </div>
-    <button type="submit" class="btn btn-danger">Add Balance</button>
-</form>
+    {% endfor %}
+</div>
 {% endblock %}
