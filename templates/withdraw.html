@@ -1,21 +1,30 @@
-{% extends 'base.html' %}
-{% block title %}Withdraw{% endblock %}
+{% extends "base.html" %}
 {% block content %}
-<h2>Withdraw Balance</h2>
+<h2>Withdraw Funds</h2>
 {% if success %}
-    <div class="alert alert-success">Withdraw Request Submitted: {{ amount }} BDT to {{ number }} via {{ method }}</div>
+    <div class="alert alert-success">
+        Withdrawal request for ৳{{ amount }} to {{ method }} ({{ number }}) submitted!
+    </div>
 {% endif %}
 <form method="POST">
-    <select name="method" class="form-select mb-2" required>
-        <option value="">Select Method</option>
-        <option value="Bkash">Bkash</option>
-        <option value="Nagad">Nagad</option>
-        <option value="Rocket">Rocket</option>
-        <option value="PayPal">PayPal</option>
-        <option value="Payoneer">Payoneer</option>
-    </select>
-    <input class="form-control mb-2" name="number" placeholder="Your Number/Email" required>
-    <input class="form-control mb-2" name="amount" placeholder="Amount" type="number" step="0.01" required>
-    <button class="btn btn-danger">Submit Withdraw</button>
+    <div class="mb-3">
+        <label>Method</label>
+        <select name="method" class="form-control" required>
+            <option value="Bkash">Bkash</option>
+            <option value="Nagad">Nagad</option>
+            <option value="Rocket">Rocket</option>
+            <option value="Paypal">PayPal</option>
+            <option value="Payoneer">Payoneer</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Number/Account</label>
+        <input type="text" name="number" required class="form-control">
+    </div>
+    <div class="mb-3">
+        <label>Amount</label>
+        <input type="number" step="0.01" name="amount" required class="form-control">
+    </div>
+    <button type="submit" class="btn btn-warning">Withdraw</button>
 </form>
 {% endblock %}
